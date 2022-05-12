@@ -1,0 +1,47 @@
+# Travis CI configuration file.
+
+sudo: required
+
+language: node_js
+
+node_js:
+  - '12'
+  - '10'
+
+addons:
+  chrome: stable
+
+stages:
+  - test
+  - compile
+  - name: deploy
+    # require the branch name to be master (note for PRs this is the base branch name)
+    if: branch = master
+
+cache: yarn
+
+jobs:
+  include:
+
+    - stage: compile
+      script:
+        - yarn install --frozen-lockfile
+        - yarn run build
+        - yarn run build:demo
+
+    - stage: test
+      script:
+        - yarn run lint
+        - yarn run test
+        # - yarn run e2e
+
+    - stage: deploy-gh-pages
+      script:
+        - yarn run build:gh-pages # rebuild for gh-pages
+      deploy:
+        provider: pages
+        skip_cleanup: true
+        github_token: $GITHUB_TOKEN
+        local_dir: dist/gh-pages
+        on:
+          branch: master
